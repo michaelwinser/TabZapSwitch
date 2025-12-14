@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>TabZap Switch Options</title>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                background: #f5f5f7;
+                margin: 0;
+                padding: 24px;
+                color: #1d1d1f;
+                line-height: 1.5;
+            }
+            .container {
+                max-width: 600px;
+                margin: 0 auto;
+            }
+            .header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+            .logo {
+                width: 48px;
+                height: 48px;
+            }
+            h1 {
+                font-size: 24px;
+                font-weight: 600;
+                margin: 0;
+            }
+            .subtitle {
+                color: #86868b;
+                font-size: 14px;
+                margin-bottom: 24px;
+            }
+            .card {
+                background: white;
+                border-radius: 12px;
+                padding: 20px;
+                margin-bottom: 16px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            }
+            .card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+            }
+            .card-title {
+                font-size: 15px;
+                font-weight: 600;
+                margin: 0;
+            }
+            .card-description {
+                font-size: 13px;
+                color: #86868b;
+                margin: 0 0 12px 0;
+            }
+            .setting-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 0;
+                border-bottom: 1px solid #f0f0f0;
+            }
+            .setting-row:last-child {
+                border-bottom: none;
+            }
+            .setting-label {
+                font-size: 14px;
+            }
+            .setting-description {
+                font-size: 12px;
+                color: #86868b;
+                margin-top: 2px;
+            }
+            select {
+                padding: 8px 12px;
+                border: 1px solid #d2d2d7;
+                border-radius: 8px;
+                font-size: 14px;
+                background: white;
+                cursor: pointer;
+            }
+            select:focus {
+                outline: none;
+                border-color: #0071e3;
+                box-shadow: 0 0 0 3px rgba(0,113,227,0.15);
+            }
+            input[type="number"] {
+                width: 100px;
+                padding: 8px 12px;
+                border: 1px solid #d2d2d7;
+                border-radius: 8px;
+                font-size: 14px;
+                text-align: center;
+            }
+            input[type="number"]:focus {
+                outline: none;
+                border-color: #0071e3;
+                box-shadow: 0 0 0 3px rgba(0,113,227,0.15);
+            }
+            .button-group {
+                display: flex;
+                gap: 10px;
+                justify-content: flex-end;
+                margin-top: 20px;
+            }
+            button {
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .btn-primary {
+                background: #0071e3;
+                color: white;
+                border: none;
+            }
+            .btn-primary:hover {
+                background: #0077ed;
+            }
+            .btn-secondary {
+                background: white;
+                color: #1d1d1f;
+                border: 1px solid #d2d2d7;
+            }
+            .btn-secondary:hover {
+                background: #f5f5f7;
+            }
+            .btn-danger {
+                background: white;
+                color: #ff3b30;
+                border: 1px solid #d2d2d7;
+            }
+            .btn-danger:hover {
+                background: #fff5f5;
+                border-color: #ff3b30;
+            }
+            .info-box {
+                background: #f0f7ff;
+                border: 1px solid #0071e3;
+                border-radius: 8px;
+                padding: 12px 16px;
+                font-size: 13px;
+                color: #1d1d1f;
+            }
+            .info-box a {
+                color: #0071e3;
+                text-decoration: none;
+            }
+            .info-box a:hover {
+                text-decoration: underline;
+            }
+            .shortcut-key {
+                display: inline-block;
+                background: #e8e8e8;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                padding: 2px 6px;
+                font-family: "SF Mono", Monaco, monospace;
+                font-size: 12px;
+            }
+        </style>
+        <script src="config.js"></script>
+        <script src="options.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <img src="icon48.png" alt="TabZap Switch" class="logo">
+                <h1>TabZap Switch Options</h1>
+            </div>
+            <p class="subtitle">Alt-Tab style tab switcher with Most Recently Used ordering</p>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Keyboard Shortcuts</h2>
+                </div>
+                <div class="info-box">
+                    <p style="margin: 0 0 8px 0;">
+                        <strong>Default shortcuts:</strong><br>
+                        <span class="shortcut-key">Media Previous</span> - Switch to previous tab<br>
+                        <span class="shortcut-key">Media Next</span> - Switch forward (undo)
+                    </p>
+                    <p style="margin: 0;">
+                        To customize shortcuts, visit <a href="#" id="shortcuts-link">chrome://extensions/shortcuts</a>
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Switching Scope</h2>
+                </div>
+                <p class="card-description">Choose whether to switch between tabs in the current window only, or across all windows</p>
+
+                <div class="setting-row">
+                    <div>
+                        <div class="setting-label">Tab Scope</div>
+                        <div class="setting-description">Which tabs to include when switching</div>
+                    </div>
+                    <select id="scope">
+                        <option value="current">Current window only</option>
+                        <option value="all">All windows</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Cycle Behavior</h2>
+                </div>
+                <p class="card-description">When rapidly pressing the shortcut, you cycle through tabs. After a pause, the cycle resets.</p>
+
+                <div class="setting-row">
+                    <div>
+                        <div class="setting-label">Cycle Timeout (ms)</div>
+                        <div class="setting-description">Time before cycle position resets</div>
+                    </div>
+                    <input type="number" id="cycleTimeoutMs" min="500" max="5000" step="100" value="1500">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="restore_defaults" class="btn-danger">Restore Defaults</button>
+                <button id="load" class="btn-secondary">Reload</button>
+                <button id="save" class="btn-primary">Save</button>
+            </div>
+        </div>
+    </body>
+</html>
