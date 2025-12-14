@@ -19,7 +19,10 @@
         "128": "icon128.png"
     },
     "permissions": [
-        "tabs", "storage"
+        "tabs", "storage", "scripting", "activeTab"
+    ],
+    "host_permissions": [
+        "<all_urls>"
     ],
     "commands": {
         "switch-previous": {
