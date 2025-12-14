@@ -10,6 +10,7 @@
     let overlay = null;
     let tabList = null;
     let searchInput = null;
+    let thumbnailPanel = null;
     let tabs = [];
     let filteredTabs = [];
     let selectedIndex = 0;
@@ -36,11 +37,17 @@
                     justify-content: center;
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                 }
+                #${OVERLAY_ID} .tabzap-wrapper {
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 16px;
+                }
                 #${OVERLAY_ID} .tabzap-container {
                     background: rgba(30, 30, 30, 0.95);
                     border-radius: 16px;
                     padding: 16px;
-                    max-width: 800px;
+                    min-width: 400px;
+                    max-width: 500px;
                     max-height: 80vh;
                     overflow-y: auto;
                     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -122,6 +129,36 @@
                     text-align: center;
                     flex-shrink: 0;
                 }
+                /* Thumbnail panel - sits in flex flow, vertical position adjusted via JS */
+                #${OVERLAY_ID} .tabzap-thumbnail-panel {
+                    width: 320px;
+                    background: rgba(30, 30, 30, 0.95);
+                    border-radius: 12px;
+                    padding: 12px;
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    transition: margin-top 0.15s ease;
+                    align-self: flex-start;
+                }
+                #${OVERLAY_ID} .tabzap-thumbnail-img {
+                    width: 100%;
+                    aspect-ratio: 16 / 10;
+                    background: rgba(0, 0, 0, 0.3);
+                    border-radius: 8px;
+                    overflow: hidden;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                #${OVERLAY_ID} .tabzap-thumbnail-img img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+                #${OVERLAY_ID} .tabzap-thumbnail-placeholder {
+                    color: rgba(255, 255, 255, 0.3);
+                    font-size: 12px;
+                }
                 #${OVERLAY_ID} .tabzap-hint {
                     color: rgba(255, 255, 255, 0.4);
                     font-size: 11px;
@@ -163,18 +200,26 @@
                     font-size: 14px;
                 }
             </style>
-            <div class="tabzap-container">
-                <div class="tabzap-header">Switch Tabs</div>
-                <div class="tabzap-search"><span class="tabzap-search-label">Search:</span><span class="tabzap-search-query"></span></div>
-                <div class="tabzap-list"></div>
-                <div class="tabzap-hint">
-                    Type to search &nbsp;&bull;&nbsp; <kbd>↑</kbd><kbd>↓</kbd> to navigate &nbsp;&bull;&nbsp; <kbd>Enter</kbd> to select &nbsp;&bull;&nbsp; <kbd>Esc</kbd> to cancel
+            <div class="tabzap-wrapper">
+                <div class="tabzap-container">
+                    <div class="tabzap-header">Switch Tabs</div>
+                    <div class="tabzap-search"><span class="tabzap-search-label">Search:</span><span class="tabzap-search-query"></span></div>
+                    <div class="tabzap-list"></div>
+                    <div class="tabzap-hint">
+                        Type to search &nbsp;&bull;&nbsp; <kbd>↑</kbd><kbd>↓</kbd> to navigate &nbsp;&bull;&nbsp; <kbd>Enter</kbd> to select &nbsp;&bull;&nbsp; <kbd>Esc</kbd> to cancel
+                    </div>
+                </div>
+                <div class="tabzap-thumbnail-panel">
+                    <div class="tabzap-thumbnail-img">
+                        <span class="tabzap-thumbnail-placeholder">Preview available after visiting tab</span>
+                    </div>
                 </div>
             </div>
         `;
 
         tabList = overlay.querySelector('.tabzap-list');
         searchInput = overlay.querySelector('.tabzap-search');
+        thumbnailPanel = overlay.querySelector('.tabzap-thumbnail-panel');
         document.body.appendChild(overlay);
 
         // Listen for keyboard events
@@ -388,6 +433,43 @@
         const selectedItem = tabList.querySelector('.tabzap-item.selected');
         if (selectedItem) {
             selectedItem.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+
+        // Update thumbnail panel
+        updateThumbnailPanel();
+    }
+
+    function updateThumbnailPanel() {
+        if (!thumbnailPanel) return;
+
+        const selectedTab = filteredTabs[selectedIndex];
+        const selectedItem = tabList?.querySelector('.tabzap-item.selected');
+        const imgContainer = thumbnailPanel.querySelector('.tabzap-thumbnail-img');
+
+        // Update thumbnail content
+        if (selectedTab?.thumbnail) {
+            imgContainer.innerHTML = `<img src="${selectedTab.thumbnail}" alt="Preview">`;
+        } else {
+            imgContainer.innerHTML = '<span class="tabzap-thumbnail-placeholder">Preview available after visiting tab</span>';
+        }
+
+        // Position thumbnail panel to align with selected item using margin-top
+        if (selectedItem && thumbnailPanel) {
+            const container = overlay.querySelector('.tabzap-container');
+            const containerRect = container.getBoundingClientRect();
+            const itemRect = selectedItem.getBoundingClientRect();
+            const panelHeight = thumbnailPanel.offsetHeight;
+
+            // Calculate margin-top to center panel on the selected item
+            // Item position relative to container top
+            const itemCenterY = itemRect.top + itemRect.height / 2 - containerRect.top;
+            let marginTop = itemCenterY - panelHeight / 2;
+
+            // Clamp to stay within container bounds
+            const maxMargin = container.offsetHeight - panelHeight;
+            marginTop = Math.max(0, Math.min(marginTop, maxMargin));
+
+            thumbnailPanel.style.marginTop = `${marginTop}px`;
         }
     }
 

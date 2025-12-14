@@ -11,7 +11,9 @@ let cycleTimeoutId = null;  // Timeout to reset cycle
 let originalTabId = null;   // Tab we started cycling from
 let overlayTabId = null;    // Tab where overlay is injected
 let overlayInjected = false;
-let faviconCache = new Map(); // Cache of tabId -> favicon data URL
+let faviconCache = new Map();    // Cache of tabId -> favicon data URL
+let thumbnailCache = new Map();  // Cache of tabId -> thumbnail data URL
+let lastActiveTabId = null;      // Track previous tab for thumbnail capture
 
 const MRU_STORAGE_KEY = 'mruList';
 
@@ -46,6 +48,18 @@ async function initialize() {
 
     // Preload all favicons
     await preloadAllFavicons();
+
+    // Initialize lastActiveTabId to current active tab
+    try {
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (activeTab) {
+            lastActiveTabId = activeTab.id;
+            // Capture initial thumbnail
+            captureThumbnail(activeTab.id);
+        }
+    } catch (e) {
+        console.log('TabZapSwitch: Could not get initial active tab');
+    }
 }
 
 // Rebuild MRU list from scratch (on first run or if corrupted)
@@ -174,6 +188,35 @@ async function preloadAllFavicons() {
     console.log('TabZapSwitch: Preloaded', faviconCache.size, 'favicons');
 }
 
+// Capture thumbnail of a tab (must be the visible tab in its window)
+async function captureThumbnail(tabId) {
+    try {
+        const tab = await chrome.tabs.get(tabId);
+
+        // Can't capture chrome:// or other restricted pages
+        if (!tab.url || tab.url.startsWith('chrome://') ||
+            tab.url.startsWith('chrome-extension://') ||
+            tab.url.startsWith('about:')) {
+            return null;
+        }
+
+        // Capture the visible tab in the tab's window
+        const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, {
+            format: 'jpeg',
+            quality: 50  // Lower quality for smaller cache size
+        });
+
+        if (dataUrl) {
+            thumbnailCache.set(tabId, dataUrl);
+            console.log('TabZapSwitch: Captured thumbnail for tab', tabId);
+        }
+        return dataUrl;
+    } catch (e) {
+        console.log('TabZapSwitch: Failed to capture thumbnail for tab', tabId, e.message);
+        return null;
+    }
+}
+
 // Get tab details for overlay display
 async function getTabDetails(tabIds) {
     const tabs = [];
@@ -185,7 +228,8 @@ async function getTabDetails(tabIds) {
                 id: tab.id,
                 title: tab.title,
                 url: tab.url,
-                favIconUrl: faviconCache.get(id) || null
+                favIconUrl: faviconCache.get(id) || null,
+                thumbnail: thumbnailCache.get(id) || null
             });
         } catch (e) {
             // Tab may have been closed
@@ -333,6 +377,11 @@ async function handleSwitchPrevious() {
         const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
         originalTabId = activeTab?.id;
 
+        // Capture thumbnail of current tab BEFORE showing overlay (while it's still visible)
+        if (activeTab) {
+            await captureThumbnail(activeTab.id);
+        }
+
         // Try to inject overlay into current tab
         let injected = false;
         if (activeTab) {
@@ -378,6 +427,11 @@ async function handleSwitchNext() {
         const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
         originalTabId = activeTab?.id;
 
+        // Capture thumbnail of current tab BEFORE showing overlay (while it's still visible)
+        if (activeTab) {
+            await captureThumbnail(activeTab.id);
+        }
+
         // Try to inject overlay into current tab
         let injected = false;
         if (activeTab) {
@@ -409,6 +463,9 @@ async function handleSwitchNext() {
 function onTabActivated(activeInfo) {
     console.log('TabZapSwitch: Tab activated', activeInfo.tabId, 'cycling:', isCycling);
 
+    // Update last active tab
+    lastActiveTabId = activeInfo.tabId;
+
     if (!isCycling) {
         // Normal activation - move to front
         moveToFront(activeInfo.tabId);
@@ -435,11 +492,12 @@ function onTabUpdated(tabId, changeInfo, tab) {
     }
 }
 
-// Tab removed - remove from MRU list and favicon cache
+// Tab removed - remove from MRU list and caches
 function onTabRemoved(tabId) {
     console.log('TabZapSwitch: Tab removed', tabId);
     removeFromList(tabId);
     faviconCache.delete(tabId);
+    thumbnailCache.delete(tabId);
 
     // If removed tab was the overlay tab, reset cycling
     if (tabId === overlayTabId) {
@@ -449,6 +507,11 @@ function onTabRemoved(tabId) {
     // Adjust mruIndex if needed
     if (isCycling && mruIndex >= mruList.length) {
         mruIndex = Math.max(0, mruList.length - 1);
+    }
+
+    // Clear lastActiveTabId if it was the removed tab
+    if (lastActiveTabId === tabId) {
+        lastActiveTabId = null;
     }
 }
 
